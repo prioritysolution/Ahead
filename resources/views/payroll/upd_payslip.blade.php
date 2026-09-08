@@ -124,7 +124,7 @@
             <!-- Breadcrumb -->
             <div class="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
                 <div class="my-auto mb-2">
-                    <h2 class="mb-1">Generate Payslip</h2>
+                    <h2 class="mb-1">Update Payslip</h2>
                     <nav>
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item">
@@ -133,7 +133,7 @@
                             {{-- <li class="breadcrumb-item">
 									Login
 								</li> --}}
-                            <li class="breadcrumb-item active" aria-current="page">Generate Payslip</li>
+                            <li class="breadcrumb-item active" aria-current="page">Update Payslip</li>
                         </ol>
                     </nav>
                 </div>
@@ -183,7 +183,7 @@
                     <div class="card flex-fill border-primary attendance-bg">
                         <div class="card-header justify-content-between">
                             <div class="card-title text-center">
-                                <h4 class="fw-medium text-gray-5 mb-1" style="font-weight: 900 !important;">Generate
+                                <h4 class="fw-medium text-gray-5 mb-1" style="font-weight: 900 !important;">Update
                                     Payslip
                                 </h4>
                             </div>
@@ -231,9 +231,15 @@
                                             <i class="fa fa-search"></i>
                                         </button>
 
-                                        <button type="button" style="display: none;" id="print_btn" class="btn btn-success" onclick="printSlip();">
-                                            <i class="fa fa-print"></i>
+                                        <button type="button" id="update_btn" class="btn btn-success" onclick="updatePayslip();"
+                                            title="Update Payslip">
+                                            <i class="fa fa-save"></i>
                                         </button>
+
+                                        {{-- <button type="button" style="display: none;" id="print_btn" class="btn btn-success" onclick="printSlip();"
+                                            title="Print Payslip">
+                                            <i class="fa fa-print"></i>
+                                        </button> --}}
 
                                     </div>
 
@@ -261,5 +267,5 @@
     <script src="{{ asset('assets/plugins/flatpickr/flatpickr.js') }}"></script>
     <script src="{{ asset('assets/plugins/flatpickr/flatpickr.min.js') }}"></script>
     <script src="{{ asset('assets/js/dayjs.min.js') }}"></script>
-    <script src="{{ asset('assets/js/payroll/pay_slip.js') }}"></script>
+    <script src="{{ asset('assets/js/payroll/pay_slip_upd.js') }}"></script>
 @endpush

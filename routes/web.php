@@ -74,4 +74,6 @@ Route::middleware('customeAuth')->group(function () {
     Route::post('/Payroll/MonthlyAttandance/PostAttandance',[ProcessPayrool::class,'process_mn_attnd']);
     Route::get('/Payroll/GeneratePayslip',[ProcessPayrool::class,'payslip_index'])->name('gen-payslip');
     Route::get('/Payroll/GetPayslipData',[ProcessPayrool::class,'generate_payslip']);
+    Route::get('/Payroll/UpdatePayslip',[ProcessPayrool::class,'upd_payslip_index'])->name('upd-payslip');
+    Route::post('/Payroll/UpdatePayslip/Save',[ProcessPayrool::class,'update_payslip']);
 });

@@ -1,5 +1,38 @@
 "use strict";
 $(".select2").select2();
+
+function formatMoney(value) {
+    const num = Number.parseFloat(String(value || 0).replace(/,/g, ""));
+    if (Number.isNaN(num)) return "0.00";
+    return num.toFixed(2);
+}
+
+function getAllowanceRows(data) {
+    const rows = [
+        { name: data.AllowNm, rate: data.BRate || "0", earning: data.BErngs || "0" },
+        { name: data.AllowNm1, rate: "0", earning: data.A1Erngs || "0" },
+        { name: data.AllowNm2, rate: "0", earning: data.A2Erngs || "0" },
+        { name: data.AllowNm3, rate: "0", earning: data.A3Erngs || "0" }
+    ];
+
+    return rows.filter(function (row) {
+        const name = String(row.name || "").trim();
+        const validName = name && name !== "null" && name !== "undefined";
+        const hasValue = parseFloat(String(row.earning || row.rate || 0).replace(/,/g, "")) > 0;
+        return validName || hasValue;
+    });
+}
+
+function getDeductionRows(data) {
+    return [
+        { name: data.DedNm1, value: data.D1Amt || "0" },
+        { name: data.DedNm2, value: data.D2Amt || "0" }
+    ].filter(function (row) {
+        const name = String(row.name || "").trim();
+        return name && name !== "null" && name !== "undefined";
+    });
+}
+
 function numberToIndianRupees(num) {
 
     if (num === 0) return "Zero Rupees Only";
@@ -65,7 +98,17 @@ function gen_slip() {
             },
 
             success: function (response) {
-                if (response.status !== "success") return;
+                if (!response || response.status !== "success") {
+                    error_message(response && response.message ? response.message : "Payslip data could not be loaded!");
+                    return;
+                }
+
+                if (!Array.isArray(response.message) || !response.message.length || !response.message[0]) {
+                    $("#slip_row").empty();
+                    error_message("No payslip data found for the selected month, year, and employee!");
+                    return;
+                }
+
                 $("#print_btn").removeAttr('style');
                 $("#slip_row").empty();
                 $("#slip_row").append('<div class="col-md-8 mb-3 align-items-center">'+
@@ -82,7 +125,7 @@ function gen_slip() {
                                                             '<div class="bold" style="font-size:16px;">AHEAD Initiatives'+
                                                             '</div>'+
                                                             '32/6 Gariahat Road (South), Kolkata-700031, West Bengal<br>'+
-                                                            '<div class="bold" id="salary_tile">'+ response.message[0].ForMnth +'</div>'
+                                                            '<div class="bold" id="salary_tile">Salary Slip For The Month Of '+ String($("#mn_id option:selected").text()).trim().toUpperCase() +' '+ String($("#yer_id option:selected").text()).trim() +'</div>'
                                                         +'</div>'+
                                                     '</div>'+
                                                 '</td>'+
@@ -131,9 +174,9 @@ function gen_slip() {
                                             '</tr>'+
 
                                             '<tr>'+
-                                                '<th>Allowances</th>'+
-                                                '<th style="text-align: right;">Rate</th>'+
-                                                '<th style="text-align: right;">Earning</th>'+
+                                                '<th class="text-center">Allowances</th>'+
+                                                '<th class="text-center">Rate</th>'+
+                                                '<th class="text-center">Earning</th>'+
 
                                             '</tr>'+
 
@@ -267,12 +310,6 @@ function gen_slip() {
                                                             '<td style="padding:4px; text-align:right;" class="no-border"> '+ response.message[0].SLFigC3 +' </td>'+
                                                         '</tr>'+
 
-                                                        // '<tr>'+
-                                                        //     '<td style="padding:4px;" class="no-border">P-Cop</td>'+
-                                                        //     '<td style="padding:4px; text-align:right;" class="no-border"> (1.00) </td>'+
-                                                        //     '<td style="padding:4px; text-align:right;" class="no-border"> 0.00 </td>'+
-                                                        // '</tr>'+
-
                                                         '<tr>'+
                                                             '<td style="padding:4px;" class="no-border">'+ response.message[0].SLNm4 +'</td>'+
                                                             '<td style="padding:4px; text-align:right;" class="no-border"> '+ response.message[0].LFigO4 +' </td>'+
@@ -283,23 +320,34 @@ function gen_slip() {
 
                                                 '</td>'+
 
-                                                
-                                                '<td>'+ response.message[0].AllowNm +'<br><br>'+ response.message[0].AllowNm1 +'<br><br>'+ response.message[0].AllowNm2 +'</td>'+
-                                                '<td class="text-right">'+
-                                                    ''+ response.message[0].BErngs +'<br><br>'+
-                                                    ''+ response.message[0].A1Erngs +'<br><br>'+
-                                                    ''+ response.message[0].A2Erngs +''+
+                                                '<td style="vertical-align:top;">'+
+                                                    '<div style="display:flex; flex-direction:column; gap:8px;">'+
+                                                        getAllowanceRows(response.message[0]).map(function (row) {
+                                                            return '<div style="min-height:32px; display:flex; align-items:center;">' + (row.name || '') + '</div>';
+                                                        }).join('') +
+                                                    '</div>'+
                                                 '</td>'+
-                                                '<td class="text-right">'+
-                                                    ''+ response.message[0].BErngs +'<br><br>'+
-                                                    ''+ response.message[0].A2Erngs +'<br><br>'+
-                                                    ''+ response.message[0].A2Erngs +''+
+                                                '<td class="text-right" style="vertical-align:top;">'+
+                                                    '<div style="display:flex; flex-direction:column; gap:8px;">'+
+                                                        getAllowanceRows(response.message[0]).map(function (row, index) {
+                                                            return '<div style="min-height:32px; display:flex; align-items:center; justify-content:flex-end;">' + (index === 0 ? formatMoney(row.rate || 0) : '') + '</div>';
+                                                        }).join('') +
+                                                    '</div>'+
+                                                '</td>'+
+                                                '<td class="text-right" style="vertical-align:top;">'+
+                                                    '<div style="display:flex; flex-direction:column; gap:8px;">'+
+                                                        getAllowanceRows(response.message[0]).map(function (row) {
+                                                            return '<div style="min-height:32px; display:flex; align-items:center; justify-content:flex-end;">' + formatMoney(row.earning || row.rate || 0) + '</div>';
+                                                        }).join('') +
+                                                    '</div>'+
                                                 '</td>'+
 
-                                                
-                                                '<td colspan="2">'+
-                                                    ''+ response.message[0].DedNm1 +' <span style="float:right;">'+ response.message[0].D1Amt +'</span><br>'+
-                                                    ''+ response.message[0].DedNm2 +' <span style="float:right;">'+ response.message[0].D2Amt +'</span>'+
+                                                '<td colspan="2" style="vertical-align:top;">'+
+                                                    '<div style="display:flex; flex-direction:column; gap:8px;">'+
+                                                        getDeductionRows(response.message[0]).map(function (row) {
+                                                            return '<div style="min-height:32px; display:flex; align-items:center; justify-content:space-between; gap:8px;"><span>' + (row.name || '') + '</span><span>' + formatMoney(row.value || 0) + '</span></div>';
+                                                        }).join('') +
+                                                    '</div>'+
                                                 '</td>'+
                                             '</tr>'+
 
@@ -307,7 +355,7 @@ function gen_slip() {
                                             '<tr>'+
                                                 '<td></td>'+
                                                 '<td class="bold">Total</td>'+
-                                                '<td class="text-right bold">'+ response.message[0].TErngs +'</td>'+
+                                                '<td class="text-right bold"></td>'+ 
                                                 '<td class="text-right bold">'+ response.message[0].TErngs +'</td>'+
                                                 '<td class="bold">Total Deduction</td>'+
                                                 '<td class="text-right bold">'+ response.message[0].TDed +'</td>'+
@@ -316,7 +364,7 @@ function gen_slip() {
                                             
                                             '<tr>'+
                                                 '<td class="bold">Net Payable</td>'+
-                                                '<td colspan="3" class="bold">'+ response.message[0].NetAmt +'</td>'+
+                                                '<td colspan="3" class="bold text-right">'+ response.message[0].NetAmt +'</td>'+ 
                                                 '<td class="bold">Bank Name</td>'+
                                                 '<td>'+ response.message[0].BkNm +'</td>'+
                                             '</tr>'+
@@ -337,7 +385,6 @@ function gen_slip() {
                                             '<img src="/assets/img/sing.png" height="20" style="float:right;">'+
                                         '</div>'+
                                     '</div>');
-                                    console.log(numberToIndianRupees(response.message[0].NetAmt));
             },
 
             complete: function () {

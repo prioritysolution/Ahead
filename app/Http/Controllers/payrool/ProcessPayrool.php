@@ -1263,7 +1263,7 @@ class ProcessPayrool extends Controller
             $title = config('app.name') . ' | Deductions';
 
             // Return view normally
-            return view('payroll.empprof', compact('title', 'gend_list', 'domain_list', 'dep_list', 'deg_list', 'sts_list', 'emp_type','emp_sts'))
+            return view('payroll.empprof', compact('title', 'gend_list', 'domain_list', 'dep_list', 'deg_list', 'sts_list', 'emp_type', 'emp_sts'))
                 ->with('error', null);
         } catch (\Exception $e) {
 
@@ -1694,6 +1694,70 @@ class ProcessPayrool extends Controller
 
             return response()->json([
                 'status'  => 'error',
+                'message' => 'Something went wrong: ' . $ex->getMessage()
+            ], 500);
+        }
+    }
+
+    public function upd_payslip_index(Request $request)
+    {
+        try {
+            $mon_list = DB::select('Call usp_VwMonth();');
+            $year_list = DB::select("Call usp_VwYear();");
+            $emp_list = DB::select("Call usp_VwEmployee(?);", [Session::get('User_Id')]);
+            $title = config('app.name') . ' | Generate Payslip';
+
+            return view('payroll.upd_payslip', compact('mon_list', 'year_list', 'emp_list', 'title'))
+                ->with('error', null);
+        } catch (\Exception $e) {
+
+            // If table missing OR procedure missing OR database error
+            $errorMessage = $e->getMessage();
+
+            return view('payroll.upd_payslip', [
+                'mon_list' => [],  // empty list so view doesn’t break
+                'year_list' => [],
+                'emp_list' => [],
+                'title'     => config('app.name') . ' | Generate Payslip',
+                'error'     => 'Something Went Wrong'
+            ]);
+        }
+    }
+
+    public function update_payslip(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'EmpId' => 'required|integer',
+                'MonthSl' => 'required|integer',
+                'YrSl' => 'required|integer',
+                'JsonData' => 'required|json'
+            ]);
+
+            $salaryData = json_decode($validated['JsonData'], true, 512, JSON_THROW_ON_ERROR);
+            if (!array_is_list($salaryData)) {
+                $salaryData = [$salaryData];
+            }
+
+            DB::statement('Call usp_UpdateSalary(?,?,?,?);', [
+                $validated['EmpId'],
+                $validated['MonthSl'],
+                $validated['YrSl'],
+                json_encode($salaryData, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Payslip updated successfully.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ex) {
+            return response()->json([
+                'status' => 'validation_error',
+                'errors' => $ex->errors()
+            ], 422);
+        } catch (\Exception $ex) {
+            return response()->json([
+                'status' => 'error',
                 'message' => 'Something went wrong: ' . $ex->getMessage()
             ], 500);
         }
